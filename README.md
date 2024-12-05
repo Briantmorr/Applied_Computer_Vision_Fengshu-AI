@@ -4,7 +4,12 @@
 
 **Fengshu-ai** is a project aimed at helping users redesign their living spaces using Feng Shui and interior design principles. By leveraging AI and computer vision technologies, Fengshu-ai provides practical suggestions for rearranging existing furniture and enhancing room layouts to promote positive energy flow and harmony.
 
+## Getting Started
 
+To get started with **Fengshu-ai**, you will need to download the dataset and place it in the appropriate folder.
+
+1. Download the dataset from [here](https://universe.roboflow.com/mokhamed-nagy-u69zl/furniture-detection-qiufc).
+2. Place the downloaded dataset in the `data` folder.
 
 ## Features
 
