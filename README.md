@@ -77,4 +77,60 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 [MIT License](LICENSE)
 
+## Fengshu-AI: Furniture Detection Web User Interface (Web API)
+This application predicts furniture placements from an uploaded image and displays the results, including labels, confidence scores, and bounding box details, on a web interface. It is built using Python Flask for the backend and HTML/JavaScript for the frontend.
 
+Features
+Upload an image of a room to detect furniture (e.g., Sofa, Table).
+
+View predictions with:
+* Furniture Label: Detected furniture type.
+* Confidence Score: The probability of the detection.
+* Bounding Box Details: The exact location of the detected objects.
+Easy-to-use web interface for interaction.
+
+Prerequisites
+Python: Version 3.7 or above.
+Flask: For creating the backend API.
+YOLOv8 Model: Pre-trained object detection model.
+HTML/JavaScript: For the frontend.
+
+Setup Instructions
+1. Clone the Repository
+Download or clone this project to your local machine.
+
+bash
+Copy code
+git clone <repository_url>
+cd <project_folder>
+2. Install Python Dependencies
+Ensure Python is installed on your system. Install required packages using:
+
+bash
+Copy code
+pip install -r requirements.txt
+Note: Ensure the torch library matches your hardware (CPU/GPU).
+
+3. Place YOLOv8 Model
+Download the best.pt model file (trained YOLOv8 weights).
+Place it in the furniture_detection directory or update its location in the app.py file.
+
+Running the Application
+1. Start the Backend Server
+Run the app.py file using:
+
+bash
+Copy code
+python app.py
+This will start a Flask server. You should see something like:
+
+csharp
+Copy code
+ * Running on http://127.0.0.1:5000/
+
+ * 2. Access the Frontend
+Open a web browser and navigate to http://127.0.0.1:5000/.
+3. Upload an Image and View Predictions
+Click the Choose File button to upload an image of a room.
+Click the Predict button.
+View the detected furniture labels, confidence scores, and bounding box details in the predictions table.
