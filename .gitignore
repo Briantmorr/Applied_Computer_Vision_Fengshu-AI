@@ -2,3 +2,4 @@
 /data/*
 !/data/examples/
 /saved_models/*
+config.json
