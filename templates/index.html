@@ -83,57 +83,37 @@
     </form>
     <div id="results">
         <img id="uploadedImage" style="display:none;" alt="Uploaded Image">
-        <h3>Predictions:</h3>
-        <table id="predictionsTable">
-            <thead>
-                <tr>
-                    <th>Label</th>
-                    <th>Confidence</th>
-                    <th>Bounding Box (x_min, y_min, x_max, y_max)</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
     </div>
     <script>
         const form = document.getElementById('uploadForm');
         const uploadedImage = document.getElementById('uploadedImage');
         const results = document.getElementById('results');
-        const predictionsTable = document.getElementById('predictionsTable').querySelector('tbody');
-
+    
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            results.style.display = 'none';
-            predictionsTable.innerHTML = '';
-
+    
             const formData = new FormData(form);
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-
-                // Show the uploaded image
-                const fileInput = document.getElementById('image');
-                const imageUrl = URL.createObjectURL(fileInput.files[0]);
-                uploadedImage.src = imageUrl;
-                uploadedImage.style.display = 'block';
-
-                // Display predictions
-                results.style.display = 'block';
-                data.predictions.forEach(prediction => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${prediction.label}</td>
-                        <td>${(prediction.confidence * 100).toFixed(2)}%</td>
-                        <td>${prediction.bbox.join(', ')}</td>
-                    `;
-                    predictionsTable.appendChild(row);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
                 });
-            } else {
-                alert('Error: Unable to get predictions.');
+    
+                if (response.ok) {
+                    // Create blob URL from the image response
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    
+                    // Display the processed image
+                    uploadedImage.src = imageUrl;
+                    uploadedImage.style.display = 'block';
+                } else {
+                    alert('Error: Unable to process image.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
             }
         });
     </script>
