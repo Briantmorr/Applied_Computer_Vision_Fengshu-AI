@@ -4,6 +4,7 @@ import cv2
 import base64
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
+import numpy as np
 
 
 class FengshuiAdvisor:
@@ -18,8 +19,20 @@ class FengshuiAdvisor:
             return json.load(f)
 
     def encode_image(self, image):
-        _, buffer = cv2.imencode('.jpg', image)
-        return base64.b64encode(buffer).decode('utf-8')
+    # If 'image' is a PIL Image, convert it to a NumPy array (RGB)
+        if not isinstance(image, np.ndarray):
+            np_image = np.array(image)
+        else:
+            np_image = image
+
+        # Convert from RGB (PIL) to BGR (OpenCV)
+        np_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2BGR)
+        
+        # Encode the image as JPEG
+        _, buffer = cv2.imencode('.jpg', np_image)
+        base64_image = base64.b64encode(buffer).decode('utf-8')
+        return base64_image
+
 
     def get_prompt(self, detected_classes):
         prompt = f"""

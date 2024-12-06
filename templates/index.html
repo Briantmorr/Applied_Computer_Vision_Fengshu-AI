@@ -61,23 +61,6 @@
         #results {
             margin-top: 20px;
         }
-        table {
-            margin: 20px auto;
-            border-collapse: collapse;
-            width: 60%;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-        td {
-            background-color: #f9f9f9;
-        }
     </style>
 </head>
 <body>
@@ -102,6 +85,8 @@
         const predictBtn = document.getElementById('predictBtn');
         const loadingText = document.getElementById('loadingText');
 
+        let detectedItems = [];
+
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(uploadForm);
@@ -117,13 +102,12 @@
                     return;
                 }
 
-                // Display the uploaded image
                 const blob = await response.blob();
                 const imageUrl = URL.createObjectURL(blob);
                 uploadedImage.src = imageUrl;
                 uploadedImage.style.display = 'block';
 
-                // Since an image is uploaded, show the predict button
+                // Show the predict button now that image is uploaded
                 predictBtn.style.display = 'inline-block';
             } catch (error) {
                 console.error('Error:', error);
@@ -137,19 +121,19 @@
             loadingText.style.display = 'block';
             predictBtn.disabled = true;
 
-            let response, blob;
-
             try {
-                // Call /predict_detector
-                response = await fetch('/predict_detector', { method: 'POST' });
+                let response = await fetch('/predict_detector', { method: 'POST' });
                 if (!response.ok) {
                     alert('Error: Unable to process image for detection.');
                     predictBtn.disabled = false;
                     loadingText.style.display = 'none';
                     return;
                 }
-                blob = await response.blob();
-                let detectorImageUrl = URL.createObjectURL(blob);
+                const data = await response.json();
+                detectedItems = data.detected_items;
+
+                // Set the image from base64
+                const detectorImageUrl = 'data:image/jpeg;base64,' + data.image_base64;
                 uploadedImage.src = detectorImageUrl;
 
             } catch (error) {
@@ -160,18 +144,25 @@
                 return;
             }
 
-            // Step 2: Apply Advisor
+            // Step 2: Advisor
             loadingText.textContent = 'Getting Recommendations...';
+
             try {
-                response = await fetch('/predict_advisor', { method: 'POST' });
+                let response = await fetch('/predict_advisor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ detected_items: detectedItems })
+                });
+
                 if (!response.ok) {
                     alert('Error: Unable to process image for recommendations.');
                     predictBtn.disabled = false;
                     loadingText.style.display = 'none';
                     return;
                 }
-                blob = await response.blob();
-                let advisorImageUrl = URL.createObjectURL(blob);
+
+                const data = await response.json();
+                const advisorImageUrl = 'data:image/jpeg;base64,' + data.image_base64;
                 uploadedImage.src = advisorImageUrl;
 
             } catch (error) {

@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, send_file
 import os
 from PIL import Image
 from io import BytesIO
+import base64
 import numpy as np
 
 from src.furnituredetector import FurnitureDetector
@@ -42,47 +43,60 @@ def predict_detector():
     # Run detection
     base_image = detector.pre_process_image(image_path)
     annotated_image, detected_items = detector.detect_objects(Image.fromarray(base_image))
-    # If annotated_image is a NumPy array, convert it to PIL Image:
+
+    # Convert annotated_image (np array or PIL image) to PIL if needed
     if isinstance(annotated_image, np.ndarray):
         annotated_image = Image.fromarray(annotated_image)
 
-    # Now save the intermediate result
+    # Save intermediate result
     intermediate_path = os.path.join(UPLOAD_FOLDER, "detector_output.jpg")
     annotated_image.save(intermediate_path, format='JPEG')
 
-    # Return the annotated image (detector result)
-    with open(intermediate_path, "rb") as f:
-        data = f.read()
-    return send_file(BytesIO(data), mimetype='image/jpeg')
+    # Convert annotated image to base64 for sending back in JSON
+    buffer = BytesIO()
+    annotated_image.save(buffer, format='JPEG')
+    buffer.seek(0)
+    encoded_image = base64.b64encode(buffer.read()).decode('utf-8')
+
+    # Return JSON with detected_items and base64 image
+    return jsonify({
+        "detected_items": detected_items,
+        "image_base64": encoded_image
+    }), 200
 
 @app.route("/predict_advisor", methods=["POST"])
 def predict_advisor():
+    data = request.get_json()
+    if not data or "detected_items" not in data:
+        return jsonify({"error": "detected_items not provided"}), 400
+
+    detected_items = data["detected_items"]
+
     intermediate_path = os.path.join(UPLOAD_FOLDER, "detector_output.jpg")
     if not os.path.exists(intermediate_path):
         return jsonify({"error": "No detector output found"}), 400
 
-    # Load the previously processed image
+    # Load the previously processed images
     base_image_path = os.path.join(UPLOAD_FOLDER, "current_image.jpg")
     base_image = detector.pre_process_image(base_image_path)
-
     detector_output_image = Image.open(intermediate_path)
 
-    # In the previous step, we had `detected_items`. To get these again,
-    # you may need to store them or re-run detection. For simplicity here,
-    # we might re-run detection to get the items:
-    # (Better approach is to store `detected_items` somewhere persistent)
-    _, detected_items = detector.detect_objects(Image.fromarray(base_image))
-
-    # Apply Feng Shui advice
+    # Apply Feng Shui advice using the detected_items from the client
     annotated_image_with_advice, resp = advisor.process_image(base_image, detector_output_image, detected_items)
 
     final_path = os.path.join(UPLOAD_FOLDER, "advisor_output.jpg")
     annotated_image_with_advice.save(final_path, format='JPEG')
 
-    # Return the final annotated image
-    with open(final_path, "rb") as f:
-        data = f.read()
-    return send_file(BytesIO(data), mimetype='image/jpeg')
+    # Return the final image as base64
+    buffer = BytesIO()
+    annotated_image_with_advice.save(buffer, format='JPEG')
+    buffer.seek(0)
+    encoded_image = base64.b64encode(buffer.read()).decode('utf-8')
+
+    return jsonify({
+        "recommendations": resp,
+        "image_base64": encoded_image
+    }), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000, debug=True)
