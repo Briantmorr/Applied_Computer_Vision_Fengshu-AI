@@ -3,45 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Furniture Detection</title>
+    <title>Fengshui Advisor</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
+            background: url('../static/background_2.jpg') no-repeat center 42% fixed;
+            background-size: cover;
         }
+
+        /* Semi-transparent black header */
         h1 {
-            background-color: #4CAF50;
+            background-color: rgba(0, 0, 0, 0.5);
             color: white;
             padding: 20px 0;
             margin: 0;
         }
+
+        /* Transparent form box with just a slight shadow */
         form {
-            margin: 20px auto;
+            margin: 40px auto;
             padding: 20px;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            width: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.8); /* fully transparent */
+            border: none;
+            border-radius: 10px;
+            width: 30%;
+            max-width: 300px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
+
         input[type="file"] {
             margin-bottom: 10px;
         }
+
         button {
-            background-color: #4CAF50;
+            background-color: rgba(0, 0, 0, 0.9);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 6px;
             cursor: pointer;
             margin: 5px;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
         }
+
         button:hover {
-            background-color: #45a049;
+            background-color: rgba(0, 0, 0, 0.8);
         }
+
         #uploadedImage {
             margin-top: 20px;
             max-width: 50%;
@@ -52,26 +64,73 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         #loadingText {
             display: none;
             margin-top: 20px;
             font-weight: bold;
             font-size: 1.2em;
+            color: #000;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
+
         #results {
             margin-top: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0 0 0;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-wrapper label {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-block;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .file-input-wrapper label:hover {
+            background-color: #45a049;
+        }
+
+        #fileName {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #000; /* White to stand out on background */
         }
     </style>
 </head>
 <body>
-    <h1>Fengshu-AI: Furniture Detection</h1>
+    <h1>Fengshu-AI: Furniture Advisor</h1>
     <form id="uploadForm" enctype="multipart/form-data" method="POST">
-        <label for="image">Upload an Image:</label><br>
-        <input type="file" id="image" name="image" accept="image/*" required>
-        <br><br>
-        <button type="submit">Upload</button>
+        <div class="file-input-wrapper">
+            <label for="image">Choose File</label>
+            <input type="file" id="image" name="image" accept="image/*" required>
+        </div>
+        <div id="fileName">No file chosen</div>
+        <div class="button-container">
+            <button type="submit">Upload</button>
+            <button type="button" id="predictBtn" style="display:none;">Predict</button>
+        </div>
     </form>
-    <button id="predictBtn" style="display:none;">Predict</button>
 
     <div id="loadingText">Loading...</div>
 

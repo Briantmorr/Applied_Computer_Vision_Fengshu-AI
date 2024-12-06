@@ -17,9 +17,6 @@ class FurnitureDetector:
             60: ('dining table', (0, 0, 255)),
             61: ('toilet', (0, 128, 255)),
             62: ('tv', (128, 0, 128)),
-            63: ('laptop', (0, 255, 128)),
-            67: ('cell phone', (255, 192, 203)),
-            72: ('refrigerator', (0, 128, 0)),
             75: ('vase', (128, 128, 0))
         }
 
