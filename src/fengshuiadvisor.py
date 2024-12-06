@@ -200,16 +200,3 @@ class FengshuiAdvisor:
 
         image_with_annotations = self.annotate_llm_response(Image.fromarray(base_image), detected_items, resp)
         return image_with_annotations, resp
-
-
-# # Usage Example:
-# # Instantiate YOLOObjectDetector to detect objects and annotate an image
-# detector = YOLOObjectDetector()
-# annotated_image, detected_items = detector.process_image('path/to/your/image.jpg')
-
-# # Instantiate FengShuiAdvisor to add Feng Shui recommendations based on detected items
-# advisor = FengShuiAdvisor()
-# annotated_image_with_advice = advisor.process_image(annotated_image, detected_items)
-
-# # Display the final annotated image
-# annotated_image_with_advice.show()

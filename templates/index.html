@@ -52,13 +52,11 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        #spinner {
+        #loadingText {
             display: none;
             margin-top: 20px;
-        }
-        #spinner img {
-            width: 50px;
-            height: 50px;
+            font-weight: bold;
+            font-size: 1.2em;
         }
         #results {
             margin-top: 20px;
@@ -92,10 +90,7 @@
     </form>
     <button id="predictBtn" style="display:none;">Predict</button>
 
-    <div id="spinner">
-        <img src="spinner.gif" alt="Loading...">
-        <p>Processing... Please wait.</p>
-    </div>
+    <div id="loadingText">Loading...</div>
 
     <div id="results">
         <img id="uploadedImage" style="display:none;" alt="Uploaded Image">
@@ -105,9 +100,7 @@
         const uploadForm = document.getElementById('uploadForm');
         const uploadedImage = document.getElementById('uploadedImage');
         const predictBtn = document.getElementById('predictBtn');
-        const spinner = document.getElementById('spinner');
-
-        let currentImageFilename = null;
+        const loadingText = document.getElementById('loadingText');
 
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -139,30 +132,53 @@
         });
 
         predictBtn.addEventListener('click', async () => {
-            spinner.style.display = 'block';
+            // Step 1: Detect Objects
+            loadingText.textContent = 'Detecting furniture...';
+            loadingText.style.display = 'block';
             predictBtn.disabled = true;
 
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST'
-                });
+            let response, blob;
 
+            try {
+                // Call /predict_detector
+                response = await fetch('/predict_detector', { method: 'POST' });
                 if (!response.ok) {
-                    alert('Error: Unable to process image.');
-                    spinner.style.display = 'none';
+                    alert('Error: Unable to process image for detection.');
                     predictBtn.disabled = false;
+                    loadingText.style.display = 'none';
                     return;
                 }
+                blob = await response.blob();
+                let detectorImageUrl = URL.createObjectURL(blob);
+                uploadedImage.src = detectorImageUrl;
 
-                const blob = await response.blob();
-                const processedImageUrl = URL.createObjectURL(blob);
-                uploadedImage.src = processedImageUrl;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+                predictBtn.disabled = false;
+                loadingText.style.display = 'none';
+                return;
+            }
+
+            // Step 2: Apply Advisor
+            loadingText.textContent = 'Getting Recommendations...';
+            try {
+                response = await fetch('/predict_advisor', { method: 'POST' });
+                if (!response.ok) {
+                    alert('Error: Unable to process image for recommendations.');
+                    predictBtn.disabled = false;
+                    loadingText.style.display = 'none';
+                    return;
+                }
+                blob = await response.blob();
+                let advisorImageUrl = URL.createObjectURL(blob);
+                uploadedImage.src = advisorImageUrl;
 
             } catch (error) {
                 console.error('Error:', error);
                 alert('An unexpected error occurred.');
             } finally {
-                spinner.style.display = 'none';
+                loadingText.style.display = 'none';
                 predictBtn.disabled = false;
             }
         });
