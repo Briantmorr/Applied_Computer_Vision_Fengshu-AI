@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fengshui Advisor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background: url('../static/background_2.jpg') no-repeat center 42% fixed;
+            background-size: cover;
+        }
+
+        /* Semi-transparent black header */
+        h1 {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 20px 0;
+            margin: 0;
+        }
+
+        /* Transparent form box with just a slight shadow */
+        form {
+            margin: 40px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8); /* fully transparent */
+            border: none;
+            border-radius: 10px;
+            width: 30%;
+            max-width: 300px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        #uploadedImage {
+            margin-top: 20px;
+            max-width: 50%;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #loadingText {
+            display: none;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1.0em;
+            color: #000;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0 0 0;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-wrapper label {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-block;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .file-input-wrapper label:hover {
+            background-color: #45a049;
+        }
+
+        #fileName {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #000; /* White to stand out on background */
+        }
+    </style>
+</head>
+<body>
+    <h1>Fengshu-AI: Furniture Advisor</h1>
+    <form id="uploadForm" enctype="multipart/form-data" method="POST">
+        <div class="file-input-wrapper">
+            <label for="image">Choose File</label>
+            <input type="file" id="image" name="image" accept="image/*" required>
+        </div>
+        <div id="fileName">No file chosen</div>
+        <div class="button-container">
+            <button type="button" id="predictBtn" style="display:none;">Predict</button>
+        </div>
+        <div id="loadingText" style="display:none;"><div id="spinner" style="display:none;"></div><span>Loading...</span></div>
+    </form>
+
+
+    <div id="results">
+        <img id="uploadedImage" style="display:none;" alt="Uploaded Image">
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadedImage = document.getElementById('uploadedImage');
+        const predictBtn = document.getElementById('predictBtn');
+        const loadingText = document.getElementById('loadingText');
+        const spinner = document.getElementById('spinner');
+        const fileInput = document.getElementById('image');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        let detectedItems = [];
+
+        fileInput.addEventListener('change', async (e) => {
+            const fileName = e.target.files[0]?.name || 'No file chosen';
+            fileNameDisplay.textContent = fileName;
+
+            if (e.target.files.length > 0) {
+                // Automatically upload the file once selected
+                const formData = new FormData(uploadForm);
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        alert('Error: Unable to upload image.');
+                        return;
+                    }
+
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    uploadedImage.src = imageUrl;
+                    uploadedImage.style.display = 'block';
+
+                    // Show the predict button now that image is uploaded
+                    predictBtn.style.display = 'inline-block';
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An unexpected error occurred.');
+                }
+            }
+        });
+
+        predictBtn.addEventListener('click', async () => {
+            // Step 1: Detect Objects
+            loadingText.querySelector('span').textContent = 'Detecting furniture...';
+            loadingText.style.display = 'flex';
+            spinner.style.display = 'block';
+            predictBtn.disabled = true;
+
+            try {
+                let response = await fetch('/predict_detector', { method: 'POST' });
+                if (!response.ok) {
+                    alert('Error: Unable to process image for detection.');
+                    predictBtn.disabled = false;
+                    loadingText.style.display = 'none';
+                    return;
+                }
+                const data = await response.json();
+                detectedItems = data.detected_items;
+
+                // Set the image from base64
+                const detectorImageUrl = 'data:image/jpeg;base64,' + data.image_base64;
+                uploadedImage.src = detectorImageUrl;
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+                predictBtn.disabled = false;
+                loadingText.style.display = 'none';
+                return;
+            }
+
+            // Step 2: Advisor
+            loadingText.querySelector('span').textContent = 'Getting Recommendations...';
+
+            try {
+                let response = await fetch('/predict_advisor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ detected_items: detectedItems })
+                });
+
+                if (!response.ok) {
+                    alert('Error: Unable to process image for recommendations.');
+                    predictBtn.disabled = false;
+                    loadingText.style.display = 'none';
+                    return;
+                }
+
+                const data = await response.json();
+                const advisorImageUrl = 'data:image/jpeg;base64,' + data.image_base64;
+                uploadedImage.src = advisorImageUrl;
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            } finally {
+                loadingText.style.display = 'none';
+                predictBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
