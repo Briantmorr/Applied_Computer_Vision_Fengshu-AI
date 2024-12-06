@@ -37,6 +37,7 @@
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
+            margin: 5px;
         }
         button:hover {
             background-color: #45a049;
@@ -50,6 +51,14 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #spinner {
+            display: none;
+            margin-top: 20px;
+        }
+        #spinner img {
+            width: 50px;
+            height: 50px;
         }
         #results {
             margin-top: 20px;
@@ -79,41 +88,82 @@
         <label for="image">Upload an Image:</label><br>
         <input type="file" id="image" name="image" accept="image/*" required>
         <br><br>
-        <button type="submit">Predict</button>
+        <button type="submit">Upload</button>
     </form>
+    <button id="predictBtn" style="display:none;">Predict</button>
+
+    <div id="spinner">
+        <img src="spinner.gif" alt="Loading...">
+        <p>Processing... Please wait.</p>
+    </div>
+
     <div id="results">
         <img id="uploadedImage" style="display:none;" alt="Uploaded Image">
     </div>
+
     <script>
-        const form = document.getElementById('uploadForm');
+        const uploadForm = document.getElementById('uploadForm');
         const uploadedImage = document.getElementById('uploadedImage');
-        const results = document.getElementById('results');
-    
-        form.addEventListener('submit', async (e) => {
+        const predictBtn = document.getElementById('predictBtn');
+        const spinner = document.getElementById('spinner');
+
+        let currentImageFilename = null;
+
+        uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-    
-            const formData = new FormData(form);
-            
+            const formData = new FormData(uploadForm);
+
             try {
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
-    
-                if (response.ok) {
-                    // Create blob URL from the image response
-                    const blob = await response.blob();
-                    const imageUrl = URL.createObjectURL(blob);
-                    
-                    // Display the processed image
-                    uploadedImage.src = imageUrl;
-                    uploadedImage.style.display = 'block';
-                } else {
-                    alert('Error: Unable to process image.');
+
+                if (!response.ok) {
+                    alert('Error: Unable to upload image.');
+                    return;
                 }
+
+                // Display the uploaded image
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                uploadedImage.src = imageUrl;
+                uploadedImage.style.display = 'block';
+
+                // Since an image is uploaded, show the predict button
+                predictBtn.style.display = 'inline-block';
             } catch (error) {
                 console.error('Error:', error);
                 alert('An unexpected error occurred.');
+            }
+        });
+
+        predictBtn.addEventListener('click', async () => {
+            spinner.style.display = 'block';
+            predictBtn.disabled = true;
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    alert('Error: Unable to process image.');
+                    spinner.style.display = 'none';
+                    predictBtn.disabled = false;
+                    return;
+                }
+
+                const blob = await response.blob();
+                const processedImageUrl = URL.createObjectURL(blob);
+                uploadedImage.src = processedImageUrl;
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            } finally {
+                spinner.style.display = 'none';
+                predictBtn.disabled = false;
             }
         });
     </script>
