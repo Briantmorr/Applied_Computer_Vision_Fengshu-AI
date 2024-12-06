@@ -67,11 +67,29 @@
 
         #loadingText {
             display: none;
-            margin-top: 20px;
+            margin-top: 10px;
             font-weight: bold;
-            font-size: 1.2em;
+            font-size: 1.0em;
             color: #000;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         #results {
@@ -82,7 +100,7 @@
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin: 20px 0 0 0;
+            margin: 15px 0 0 0;
         }
 
         .file-input-wrapper {
@@ -127,12 +145,11 @@
         </div>
         <div id="fileName">No file chosen</div>
         <div class="button-container">
-            <button type="submit">Upload</button>
             <button type="button" id="predictBtn" style="display:none;">Predict</button>
         </div>
+        <div id="loadingText" style="display:none;"><div id="spinner" style="display:none;"></div><span>Loading...</span></div>
     </form>
 
-    <div id="loadingText">Loading...</div>
 
     <div id="results">
         <img id="uploadedImage" style="display:none;" alt="Uploaded Image">
@@ -143,41 +160,49 @@
         const uploadedImage = document.getElementById('uploadedImage');
         const predictBtn = document.getElementById('predictBtn');
         const loadingText = document.getElementById('loadingText');
+        const spinner = document.getElementById('spinner');
+        const fileInput = document.getElementById('image');
+        const fileNameDisplay = document.getElementById('fileName');
 
         let detectedItems = [];
 
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(uploadForm);
+        fileInput.addEventListener('change', async (e) => {
+            const fileName = e.target.files[0]?.name || 'No file chosen';
+            fileNameDisplay.textContent = fileName;
 
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+            if (e.target.files.length > 0) {
+                // Automatically upload the file once selected
+                const formData = new FormData(uploadForm);
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
 
-                if (!response.ok) {
-                    alert('Error: Unable to upload image.');
-                    return;
+                    if (!response.ok) {
+                        alert('Error: Unable to upload image.');
+                        return;
+                    }
+
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    uploadedImage.src = imageUrl;
+                    uploadedImage.style.display = 'block';
+
+                    // Show the predict button now that image is uploaded
+                    predictBtn.style.display = 'inline-block';
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An unexpected error occurred.');
                 }
-
-                const blob = await response.blob();
-                const imageUrl = URL.createObjectURL(blob);
-                uploadedImage.src = imageUrl;
-                uploadedImage.style.display = 'block';
-
-                // Show the predict button now that image is uploaded
-                predictBtn.style.display = 'inline-block';
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An unexpected error occurred.');
             }
         });
 
         predictBtn.addEventListener('click', async () => {
             // Step 1: Detect Objects
-            loadingText.textContent = 'Detecting furniture...';
-            loadingText.style.display = 'block';
+            loadingText.querySelector('span').textContent = 'Detecting furniture...';
+            loadingText.style.display = 'flex';
+            spinner.style.display = 'block';
             predictBtn.disabled = true;
 
             try {
@@ -204,7 +229,7 @@
             }
 
             // Step 2: Advisor
-            loadingText.textContent = 'Getting Recommendations...';
+            loadingText.querySelector('span').textContent = 'Getting Recommendations...';
 
             try {
                 let response = await fetch('/predict_advisor', {
